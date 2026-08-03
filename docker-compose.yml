@@ -1,0 +1,30 @@
+# docker-compose.yml
+
+services:
+
+  # ---------------------------------------------------------------------------- #
+
+   postgres:
+     ports:
+       - "5429:5432"
+     container_name: "mom_blplt_postgres"
+     # https://hub.docker.com/_/postgres
+     image: "postgres:15.1-alpine"
+     restart: "unless-stopped"
+     environment:
+       POSTGRES_USER: "test_user"
+       POSTGRES_PASSWORD: "test_password"
+       POSTGRES_DB: "test_db"
+     volumes:
+       - "mom_blplt_postgres_data:/var/lib/postgresql/data"
+     networks:
+       - "mom_blplt_net"
+
+  # ---------------------------------------------------------------------------- #
+
+
+volumes:
+  mom_blplt_postgres_data: { }
+
+networks:
+  mom_blplt_net: { }

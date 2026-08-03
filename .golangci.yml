@@ -1,0 +1,136 @@
+run:
+  go: "1.24"
+  deadline: 2m
+  timeout: 3m
+  build-tags:
+    - mock
+    - integration
+linters:
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - decorder
+    - dupl
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - copyloopvar
+    - forcetypeassert
+    - funlen
+    - ginkgolinter
+    - gci
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - gosmopolitan
+    - govet
+    - grouper
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - nakedret
+    - nestif
+    - nilerr
+    - noctx
+    - nolintlint
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - revive
+    - sloglint
+    - staticcheck
+    - usetesting
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - zerologlint
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - blank
+      - dot
+    skip-generated: true
+    custom-order: true
+  gocritic:
+    disabled-checks:
+      - commentFormatting
+      - exitAfterDefer
+  gocyclo:
+    min-complexity: 15
+  nestif:
+    min-complexity: 10
+  dupl:
+    threshold: 160
+  funlen:
+    lines: 130
+    statements: 60
+  revive:
+    rules:
+      - name: unexported-return
+        disabled: true
+  misspell:
+    locale: US
+  depguard:
+    rules:
+      main:
+        allow:
+          - $gostd
+          - $gomodname
+          - github.com
+        deny:
+          - pkg: "emperror.dev/errors"
+            desc: should be replaced by "github.com/pkg/errors"
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+  interfacebloat:
+    max: 15
+  errorlint:
+    asserts: false
+issues:
+  exclude-rules:
+    - path: "cmd" # drop this after migration to 1.54
+      linters:
+        - nolintlint
+    - path: ".*_test\\.go$"
+      linters:
+        - funlen
+        - goconst
+        - gocyclo
+  exclude-files:
+    - "init.go"
+    - "_mock.go"
+    - ".*_test.go$"
+  exclude-dirs:
+    - "semgrep-rules"
