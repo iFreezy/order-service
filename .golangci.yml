@@ -1,6 +1,5 @@
 run:
-  go: "1.24"
-  deadline: 2m
+  go: "1.25"
   timeout: 3m
   build-tags:
     - mock
