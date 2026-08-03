@@ -4,27 +4,32 @@ services:
 
   # ---------------------------------------------------------------------------- #
 
-   postgres:
-     ports:
-       - "5429:5432"
-     container_name: "mom_blplt_postgres"
-     # https://hub.docker.com/_/postgres
-     image: "postgres:15.1-alpine"
-     restart: "unless-stopped"
-     environment:
-       POSTGRES_USER: "test_user"
-       POSTGRES_PASSWORD: "test_password"
-       POSTGRES_DB: "test_db"
-     volumes:
-       - "mom_blplt_postgres_data:/var/lib/postgresql/data"
-     networks:
-       - "mom_blplt_net"
+  postgres:
+    container_name: "order-postgres"
+    # https://hub.docker.com/_/postgres
+    image: "postgres:16-alpine"
+    restart: "unless-stopped"
+    ports:
+      - "5430:5432"
+    environment:
+      POSTGRES_USER: "order_user"
+      POSTGRES_PASSWORD: "order_pass"
+      POSTGRES_DB: "order_db"
+    volumes:
+      - "order_postgres_data:/var/lib/postgresql/data"
+    networks:
+      - "order_net"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U order_user -d order_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # ---------------------------------------------------------------------------- #
 
 
 volumes:
-  mom_blplt_postgres_data: { }
+  order_postgres_data: { }
 
 networks:
-  mom_blplt_net: { }
+  order_net: { }
