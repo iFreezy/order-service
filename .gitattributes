@@ -1,0 +1,5 @@
+/mocks/*.go -diff
+*.pb.go -diff
+vendor/ -diff
+trace_*.go -diff
+/internal/restapi/operations/ -diff
