@@ -2,10 +2,10 @@ package section
 
 type (
 	Processor struct {
-		WebServer ProcessorWebServer
+		WebServer ProcessorWebServer `split_words:"true"`
 	}
 
 	ProcessorWebServer struct {
-		ListenPort int `default:"8082"`
+		ListenPort uint32 `default:"8082" split_words:"true"`
 	}
 )
