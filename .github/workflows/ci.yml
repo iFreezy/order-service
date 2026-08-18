@@ -12,12 +12,13 @@ jobs:
     env:
       CI: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.24.1'
+          # версия берётся из go.mod, чтобы CI не отставал от требований зависимостей
+          go-version-file: go.mod
           cache-dependency-path: go.sum
 
       - name: Build
@@ -30,18 +31,26 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: '1.24.1'
+          # версия берётся из go.mod, чтобы CI не отставал от требований зависимостей
+          go-version-file: go.mod
           cache: false
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        # v6 — последняя версия экшена, поддерживающая golangci-lint v1.x;
+        # v7+ работает только с golangci-lint v2 (другой формат .golangci.yml)
+        uses: golangci/golangci-lint-action@v6.5.2
         with:
           # Require: The version of golangci-lint to use.
           # When install-mode is binary (default) the value can be v1.2 or v1.2.3 or latest to use the latest version.
           # When install-mode is goinstall the value can be v1.2.3, latest, or the hash of a commit.
           version: v1.64.8
+
+          # Собираем линтер из исходников тем же Go, что и проект.
+          # Готовый бинарник golangci-lint собран с go1.24 и не может
+          # тайпчекать зависимости, которые требуют go1.25 (gin, pgx, x/net).
+          install-mode: goinstall
 
           # Optional: working directory, useful for monorepos
           # working-directory: somedir
