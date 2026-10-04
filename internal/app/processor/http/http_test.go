@@ -106,3 +106,54 @@ func TestStartAsyncReportsBindFailure(t *testing.T) {
 		t.Fatal("shutdown did not finish")
 	}
 }
+
+func TestStartAsyncDrainsInflightRequest(t *testing.T) {
+	started := make(chan struct{})
+	release := make(chan struct{})
+	server := http.Server{Addr: "127.0.0.1:0", Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		close(started)
+		<-release
+		w.WriteHeader(http.StatusNoContent)
+	}), ReadHeaderTimeout: time.Second}
+	proc := &httpProc{server: server}
+	ctx, cancel := context.WithCancel(t.Context())
+	var wg sync.WaitGroup
+	proc.StartAsync(ctx, &wg)
+	if proc.addr == "" {
+		t.Fatal("listener was not created before StartAsync returned")
+	}
+	response := make(chan error, 1)
+	go func() {
+		client := &http.Client{Timeout: 3 * time.Second}
+		resp, err := client.Get("http://" + proc.addr)
+		if err == nil {
+			if resp.StatusCode != http.StatusNoContent {
+				err = fmt.Errorf("status %d", resp.StatusCode)
+			}
+			_ = resp.Body.Close()
+		}
+		response <- err
+	}()
+	select {
+	case <-started:
+	case <-time.After(3 * time.Second):
+		t.Fatal("request was not accepted")
+	}
+	cancel()
+	close(release)
+	select {
+	case err := <-response:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("in-flight request was not drained")
+	}
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("shutdown watchers did not finish")
+	}
+}
