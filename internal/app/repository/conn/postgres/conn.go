@@ -13,12 +13,8 @@ import (
 )
 
 const (
-	// maxOpenConns caps the pool so that a burst of concurrent requests cannot
-	// exhaust the connection limit of the PostgreSQL server.
 	maxOpenConns = 10
 
-	// pingTimeout keeps the startup connectivity check short: the database must
-	// answer quickly or the process should fail fast.
 	pingTimeout = 2 * time.Second
 )
 
@@ -31,8 +27,23 @@ func (c *Client) DB() *gorm.DB {
 	return c.db
 }
 
+func (c *Client) GetDB(ctx context.Context) *gorm.DB {
+	if tx := getTxFromCtx(ctx); tx != nil {
+		return tx
+	}
+	return c.db
+}
+
+func (c *Client) InsideTx(ctx context.Context, fn func(ctx context.Context) error) error {
+	if getTxFromCtx(ctx) != nil {
+		return fn(ctx)
+	}
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return fn(ctxWithTx(ctx, tx))
+	})
+}
+
 func NewClient(ctx context.Context, cfg section.RepositoryPostgres) (*Client, error) {
-	// net/url escapes special characters in the credentials for us.
 	dsn := url.URL{
 		Scheme:   "postgres",
 		Host:     cfg.Address,
@@ -59,6 +70,7 @@ func NewClient(ctx context.Context, cfg section.RepositoryPostgres) (*Client, er
 	defer cancel()
 
 	if err = sqlDB.PingContext(pingCtx); err != nil {
+		_ = sqlDB.Close()
 		return nil, fmt.Errorf("failed to ping postgres: %w", err)
 	}
 
