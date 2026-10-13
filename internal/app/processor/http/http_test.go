@@ -29,7 +29,7 @@ func TestMiddlewareChain(t *testing.T) {
 	previous := log.Logger
 	log.Logger = zerolog.New(&output).Level(zerolog.DebugLevel)
 	t.Cleanup(func() { log.Logger = previous })
-	proc := NewHTTP(rhealth.NewHandler(), section.ProcessorWebServer{}).(*httpProc)
+	proc := NewHTTP(rhealth.NewHandler(), nil, section.ProcessorWebServer{}).(*httpProc)
 	router := proc.server.Handler.(*gin.Engine)
 	router.GET("/failure", func(c *gin.Context) {
 		httph.HandleError(c.Writer, c.Request, fmt.Errorf("private details: %w", entity.ErrAlreadyExists))

@@ -13,9 +13,14 @@ import (
 	"github.com/iFreezy/order-service/internal/app/config"
 	rhandler "github.com/iFreezy/order-service/internal/app/handler/http"
 	rhealth "github.com/iFreezy/order-service/internal/app/handler/http/health"
+	rorder "github.com/iFreezy/order-service/internal/app/handler/http/order"
 	"github.com/iFreezy/order-service/internal/app/processor"
 	rprocessor "github.com/iFreezy/order-service/internal/app/processor/http"
+	"github.com/iFreezy/order-service/internal/app/repository"
 	rcpostgres "github.com/iFreezy/order-service/internal/app/repository/conn/postgres"
+	porder "github.com/iFreezy/order-service/internal/app/repository/order"
+	"github.com/iFreezy/order-service/internal/app/service"
+	sorder "github.com/iFreezy/order-service/internal/app/service/order"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
@@ -32,6 +37,9 @@ type Builder struct {
 	signals  chan os.Signal
 
 	connPostgres *rcpostgres.Client
+	orderRepo    repository.Order
+	orderService service.Order
+	orderHandler rhandler.Order
 
 	healthHandler rhandler.Health
 
@@ -89,9 +97,24 @@ func (b *Builder) BuildRepoConnPostgres() {
 		b.connPostgres, b.err = rcpostgres.NewClient(b.ctx, b.cfg.Repository.Postgres)
 	}, b.cfg)
 }
+func (b *Builder) BuildRepoOrder() {
+	b.exec(func(b *Builder) {
+		b.orderRepo = porder.NewRepo(b.connPostgres)
+	}, b.connPostgres)
+}
+func (b *Builder) BuildServiceOrder() {
+	b.exec(func(b *Builder) {
+		b.orderService = sorder.NewService(b.orderRepo)
+	}, b.orderRepo)
+}
+func (b *Builder) BuildHandlerHttpOrder() {
+	b.exec(func(b *Builder) {
+		b.orderHandler = rorder.NewHandler(b.orderService)
+	}, b.orderService)
+}
 func (b *Builder) BuildProcHttp() {
 	b.exec(func(b *Builder) {
-		b.processors = append(b.processors, rprocessor.NewHTTP(b.healthHandler, b.cfg.Processor.WebServer))
+		b.processors = append(b.processors, rprocessor.NewHTTP(b.healthHandler, b.orderHandler, b.cfg.Processor.WebServer))
 	}, b.cfg, b.healthHandler)
 }
 func (b *Builder) Run() error {
