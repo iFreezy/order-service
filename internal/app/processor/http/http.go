@@ -29,12 +29,15 @@ type httpProc struct {
 	server http.Server
 }
 
-func NewHTTP(hHealth rhandler.Health, cfg section.ProcessorWebServer) processor.Processor {
+func NewHTTP(hHealth rhandler.Health, hOrder rhandler.Order, cfg section.ProcessorWebServer) processor.Processor {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(adaptRequestMiddleware(httph.NewErrorMiddleware()), mzerolog.NewMiddleware(mzerolog.WithSkipper(util.IsFilteredHttpRoute)), gin.Recovery())
 	router.NoRoute(handleNotFound)
 	vGenericRegHealthCheck(router, hHealth)
+	if hOrder != nil {
+		v1RegOrderHandler(router.Group("/v1"), hOrder)
+	}
 	for _, route := range router.Routes() {
 		log.Info().Str("method", route.Method).Str("path", route.Path).Msg("Route registered")
 	}
