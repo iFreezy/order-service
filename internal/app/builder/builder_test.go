@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/iFreezy/order-service/internal/app/processor"
+	sorder "github.com/iFreezy/order-service/internal/app/service/order"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/urfave/cli/v2"
@@ -38,9 +39,20 @@ func TestBuildProcHTTPDoesNotRequirePostgres(t *testing.T) {
 	b, _ := newTestBuilder(t, t.Context())
 	defer b.stop()
 	b.cfg.Processor.WebServer.ListenPort = 0
+	b.orderService = sorder.NewService(nil)
+	b.BuildHandlerHttpOrder()
 	b.BuildProcHttp()
 	if b.err != nil || len(b.processors) != 1 {
-		t.Fatalf("HTTP processor needs only config and health: err=%v processors=%d", b.err, len(b.processors))
+		t.Fatalf("HTTP processor needs config and handlers, but not Postgres: err=%v processors=%d", b.err, len(b.processors))
+	}
+}
+
+func TestBuildProcHTTPRequiresOrderHandler(t *testing.T) {
+	b, _ := newTestBuilder(t, t.Context())
+	defer b.stop()
+	b.BuildProcHttp()
+	if b.err == nil || len(b.processors) != 0 {
+		t.Fatalf("HTTP processor was built without order handler: err=%v processors=%d", b.err, len(b.processors))
 	}
 }
 

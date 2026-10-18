@@ -115,7 +115,7 @@ func (b *Builder) BuildHandlerHttpOrder() {
 func (b *Builder) BuildProcHttp() {
 	b.exec(func(b *Builder) {
 		b.processors = append(b.processors, rprocessor.NewHTTP(b.healthHandler, b.orderHandler, b.cfg.Processor.WebServer))
-	}, b.cfg, b.healthHandler)
+	}, b.cfg, b.healthHandler, b.orderHandler)
 }
 func (b *Builder) Run() error {
 	defer b.stop()
